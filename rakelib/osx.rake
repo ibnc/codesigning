@@ -31,7 +31,7 @@ namespace :osx do
       mkdir_p 'tmp/osx'
       sh("unzip -q -o '#{f}' -d tmp/osx/#{tmp_dir}")
       home_dir = File.expand_path('~')
-      sh(%Q{security unlock-keychain -p \"$(cat #{Dir.pwd}/../signing-keys/codesign.keychain.password)\" '#{home_dir}/Library/Keychains/codesign.keychain-db' && codesign --force --verify --verbose --sign "Developer ID Application: ThoughtWorks (LL62P32G5C)" tmp/osx/#{tmp_dir}/*.app}) do |ok, res|
+      sh(%Q{security unlock-keychain -p \"$(cat #{Dir.pwd}/../signing-keys/codesign.keychain.password)\" '#{home_dir}/Library/Keychains/codesign.keychain-db' && codesign --force --verify --verbose --sign "Developer ID Application: ThoughtWorks (LL62P32G5C)" tmp/osx/#{tmp_dir}/*}) do |ok, res|
         puts 'Locking keychain again'
         sh("security lock-keychain '#{home_dir}/Library/Keychains/codesign.keychain-db'")
         fail 'There was an error performing code OSX signing' unless ok
