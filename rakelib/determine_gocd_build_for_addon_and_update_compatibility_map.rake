@@ -45,7 +45,7 @@ task :determine_corresponding_gocd_build, [:go_enterprise_dir] do |t, args|
   rm_rf target_dir
   mkdir_p target_dir
 
-  if (full_version = find_full_version_from_version_json(gocd_git_revision))
+  if (full_version = find_full_version_from_version_json(gocd_git_revision) || find_full_version(gocd_git_revision))
     File.open("target/gocd_version.txt", 'w') {|file| file.write(full_version)}
   else
     raise "Could not find an entry for #{gocd_git_revision} in releases.json, this usually means fetch_from_build_go_cd for revision #{gocd_git_revision} has not completed."

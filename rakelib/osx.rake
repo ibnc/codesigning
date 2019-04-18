@@ -2,8 +2,8 @@ require 'securerandom'
 
 # make sure deps are installed using
 namespace :osx do
-  signing_dir = "out/osx"
-  osx_source_dir = 'src/osx'
+  signing_dir     = "out/osx"
+  osx_source_dir  = 'src/osx'
   meta_source_dir = 'src/meta'
 
   # assumes the following:
@@ -52,8 +52,32 @@ namespace :osx do
     generate_metadata_for_single_dir signing_dir, '*.zip', :osx
   end
 
+  desc 'sign osx zip instead of binaries'
+  task :sign_as_zip => ['gpg:setup'] do
+    if Dir["#{osx_source_dir}/*.zip"].empty?
+      raise "Unable to find any binaries in #{osx_source_dir}"
+    end
+
+    rm_rf signing_dir
+    mkdir_p signing_dir
+    Dir["#{osx_source_dir}/*.zip"].each do |f|
+      cp f, "#{signing_dir}"
+    end
+
+    cd signing_dir do
+      Dir["*.zip"].each do |f|
+        sh("gpg --default-key '#{GPG_SIGNING_ID}' --armor --detach-sign --sign --output '#{f}.asc' '#{f}'")
+        sh("gpg --default-key '#{GPG_SIGNING_ID}' --verify '#{f}.asc'")
+      end
+    end
+
+    rm_rf 'tmp'
+
+    generate_metadata_for_single_dir signing_dir, '*.zip', :osx
+  end
+
   desc "upload the osx binaries, after signing the binaries"
-  task :upload, [:bucket_url] => :sign do |t, args|
+  task :upload, [:bucket_url] => :sign_as_zip do |t, args|
     bucket_url = args[:bucket_url]
 
     raise "Please specify bucket url" unless bucket_url

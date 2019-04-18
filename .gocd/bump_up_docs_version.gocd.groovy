@@ -1,6 +1,6 @@
 GoCD.script {
   pipelines {
-    pipeline('updated_bump_up_docs_version') {
+    pipeline('bump_up_docs_version') {
       environmentVariables = [
         GITHUB_USER: 'gocd-ci-user',
         ORG        : 'gocd',
@@ -18,7 +18,7 @@ GoCD.script {
           url = 'https://github.com/gocd/release-activity-scripts'
         }
         dependency('PromoteToStable') {
-          pipeline = 'promote-stable-release'
+          pipeline = 'PublishStableRelease'
           stage = 'publish-latest-json'
         }
       }
@@ -41,7 +41,7 @@ GoCD.script {
                 fetchArtifact {
                   file = true
                   job = 'dist'
-                  pipeline = 'installers/code-sign/promote-stable-release'
+                  pipeline = 'installers/code-sign/PublishStableRelease'
                   runIf = 'passed'
                   source = 'dist/meta/version.json'
                   stage = 'dist'
@@ -63,7 +63,7 @@ GoCD.script {
                 fetchArtifact {
                   file = true
                   job = 'dist'
-                  pipeline = 'installers/code-sign/promote-stable-release'
+                  pipeline = 'installers/code-sign/PublishStableRelease'
                   runIf = 'passed'
                   source = 'dist/meta/version.json'
                   stage = 'dist'
@@ -85,7 +85,7 @@ GoCD.script {
                 fetchArtifact {
                   file = true
                   job = 'dist'
-                  pipeline = 'installers/code-sign/promote-stable-release'
+                  pipeline = 'installers/code-sign/PublishStableRelease'
                   runIf = 'passed'
                   source = 'dist/meta/version.json'
                   stage = 'dist'
@@ -107,7 +107,7 @@ GoCD.script {
                 fetchArtifact {
                   file = true
                   job = 'dist'
-                  pipeline = 'installers/code-sign/promote-stable-release'
+                  pipeline = 'installers/code-sign/PublishStableRelease'
                   runIf = 'passed'
                   source = 'dist/meta/version.json'
                   stage = 'dist'
@@ -129,7 +129,7 @@ GoCD.script {
                 fetchArtifact {
                   file = true
                   job = 'dist'
-                  pipeline = 'installers/code-sign/promote-stable-release'
+                  pipeline = 'installers/code-sign/PublishStableRelease'
                   runIf = 'passed'
                   source = 'dist/meta/version.json'
                   stage = 'dist'
@@ -156,7 +156,7 @@ GoCD.script {
                 fetchArtifact {
                   file = true
                   job = 'dist'
-                  pipeline = 'installers/code-sign/promote-stable-release'
+                  pipeline = 'installers/code-sign/PublishStableRelease'
                   runIf = 'passed'
                   source = 'dist/meta/version.json'
                   stage = 'dist'
@@ -178,7 +178,7 @@ GoCD.script {
                 fetchArtifact {
                   file = true
                   job = 'dist'
-                  pipeline = 'installers/code-sign/promote-stable-release'
+                  pipeline = 'installers/code-sign/PublishStableRelease'
                   runIf = 'passed'
                   source = 'dist/meta/version.json'
                   stage = 'dist'
@@ -200,7 +200,7 @@ GoCD.script {
                 fetchArtifact {
                   file = true
                   job = 'dist'
-                  pipeline = 'installers/code-sign/promote-stable-release'
+                  pipeline = 'installers/code-sign/PublishStableRelease'
                   runIf = 'passed'
                   source = 'dist/meta/version.json'
                   stage = 'dist'

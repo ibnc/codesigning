@@ -1,7 +1,7 @@
 
 GoCD.script {
   pipelines {
-    pipeline('updated_post_release_github_activities') {
+    pipeline('post-release-github-activities') {
       group = 'internal'
       labelTemplate = '${COUNT}'
       lockBehavior = 'none'
@@ -13,7 +13,7 @@ GoCD.script {
           url = 'https://git.gocd.io/git/gocd/codesigning'
         }
         dependency('PromoteToStable') {
-          pipeline = 'promote-stable-release'
+          pipeline = 'PublishStableRelease'
           stage = 'publish-latest-json'
         }
       }
@@ -37,7 +37,7 @@ GoCD.script {
                   destination = 'codesigning'
                   file = true
                   job = 'dist'
-                  pipeline = 'installers/code-sign/promote-stable-release'
+                  pipeline = 'installers/code-sign/PublishStableRelease'
                   runIf = 'passed'
                   source = 'dist/meta/version.json'
                   stage = 'dist'
@@ -48,7 +48,7 @@ GoCD.script {
                   workingDir = 'codesigning'
                 }
                 exec {
-                  commandLine = ['node', 'draft_new_release.js']
+                  commandLine = ['node', 'lib/draft_new_release.js']
                   runIf = 'passed'
                   workingDir = 'codesigning'
                 }

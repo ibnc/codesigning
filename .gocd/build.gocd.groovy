@@ -78,7 +78,7 @@ def secureEnvironmentVariableForAddons = [
 GoCD.script {
   environments {
     environment('internal') {
-      pipelines = ['code-sign', 'upload-addons', 'promote-stable-release']
+      pipelines = ['code-sign', 'upload-addons', 'PublishStableRelease']
     }
   }
 
@@ -104,7 +104,7 @@ GoCD.script {
         }
         dependency('installers') {
           pipeline = 'installers'
-          stage = 'dist'
+          stage = 'docker'
         }
         dependency('regression') {
           pipeline = 'regression'
@@ -121,7 +121,7 @@ GoCD.script {
       }
 
       stages {
-        stage('sign') {
+        stage('sign-and-upload') {
           cleanWorkingDir = true
           //credentials for gocd experimental builds
           secureEnvironmentVariables = secureEnvironmentVariableForGoCD
@@ -183,14 +183,72 @@ GoCD.script {
               }
             }
             job('osx') {
-              resources = ['mac', 'signer']
+              elasticProfileId = 'ecs-gocd-dev-build'
               tasks {
-                addAll(cleanTasks())
                 add(fetchArtifactTask('osx'))
                 add(fetchArtifactTask('meta'))
                 bash {
-                  commandString = 'rake --trace osx:sign osx:upload[${EXPERIMENTAL_DOWNLOAD_BUCKET}]'
+                  commandString = "bundle install --jobs 4 --path .bundle --clean"
                   workingDir = 'codesigning'
+                }
+                bash {
+                  commandString = 'bundle exec rake --trace osx:sign_as_zip osx:upload[${EXPERIMENTAL_DOWNLOAD_BUCKET}]'
+                  workingDir = 'codesigning'
+                }
+              }
+            }
+//            job('osx') {
+//              resources = ['mac', 'signer']
+//              tasks {
+//                addAll(cleanTasks())
+//                add(fetchArtifactTask('osx'))
+//                add(fetchArtifactTask('meta'))
+//                bash {
+//                  commandString = 'rake --trace osx:sign osx:upload[${EXPERIMENTAL_DOWNLOAD_BUCKET}]'
+//                  workingDir = 'codesigning'
+//                }
+//              }
+//            }
+            job('upload-docker-image') {
+              elasticProfileId = 'ecs-gocd-dev-build-dind'
+              secureEnvironmentVariables = [
+                DOCKERHUB_TOKEN   : 'AES:KlfOlLUAQMzP/2CZId73YQ==:s8fSRyucqVPMft5PpLPb9bEKc95iN3X5n1f6DK+i/8ZwIFNtw23L5m1y1Qs/RkNoYE34QNrrj1Rk7+4Bphz+yg==',
+                DOCKERHUB_USERNAME: 'AES:C6gaOdyi+SDGkkvUHni6zw==:I2kqDgvf9GiwD7zzT1UWjQ==',
+                DOCKERHUB_PASSWORD: 'AES:B2dXEmk4/HMqgLITXECK2A==:dfe+7OkQVOss4fFcXbACy1ZMqW8kVWvt8jyMmgzMDb8='
+              ]
+              tasks {
+                fetchArtifact {
+                  job = 'docker-server'
+                  pipeline = 'installers'
+                  runIf = 'passed'
+                  source = 'docker-server'
+                  stage = 'docker'
+                  destination = "codesigning"
+                }
+                fetchArtifact {
+                  job = 'docker-agent'
+                  pipeline = 'installers'
+                  runIf = 'passed'
+                  source = 'docker-agent'
+                  stage = 'docker'
+                  destination = "codesigning"
+                }
+                bash {
+                  commandString = "bundle install --jobs 4 --path .bundle --clean"
+                  workingDir = 'codesigning'
+                }
+                bash {
+                  commandString = "bundle exec rake docker:upload_experimental_docker_images"
+                  workingDir = 'codesigning'
+                }
+                exec {
+                  commandLine = ['npm', 'install']
+                  workingDir = "codesigning"
+                }
+                bash {
+                  commandString = 'node lib/update_dockerhub_full_description.js gocdexperimental'
+                  runIf = 'passed'
+                  workingDir = "codesigning"
                 }
               }
             }
@@ -350,7 +408,7 @@ GoCD.script {
       }
     }
 
-    pipeline('promote-stable-release') {
+    pipeline('PublishStableRelease') {
       group = 'go-cd'
 
       environmentVariables = [
@@ -358,7 +416,8 @@ GoCD.script {
         'EXPERIMENTAL_DOWNLOAD_BUCKET': 'downloadgocdio-experimentaldownloadss3-dakr8wkhi2bo/experimental',
         'UPDATE_CHECK_BUCKET'         : 'updategocdio-updategocdios3-1ujj23u8hpqdl',
         'ADDONS_EXPERIMENTAL_BUCKET'  : 'mini-apps-extensionsexperimentaldownloadss3-hare386lt2d9/addons/experimental',
-        'ADDONS_STABLE_BUCKET'        : 'mini-apps-extensionsdownloadss3-11t0jfofrxhyd/addons'
+        'ADDONS_STABLE_BUCKET'        : 'mini-apps-extensionsdownloadss3-11t0jfofrxhyd/addons',
+        'REALLY_REALLY_UPLOAD'        : ''
       ]
 
       materials() {
@@ -395,6 +454,10 @@ GoCD.script {
           pipeline = 'go-addon-build'
           stage = 'build-addons'
         }
+        dependency('verify-usage-data-reporting') {
+          pipeline = 'verify-usage-data-reporting'
+          stage = 'for-build.gocd.org'
+        }
       }
 
       stages {
@@ -408,6 +471,9 @@ GoCD.script {
             job('promote-binaries') {
               elasticProfileId = 'ecs-gocd-dev-build'
               tasks {
+                bash {
+                  commandString = '-c if [ "${REALLY_REALLY_UPLOAD}" != \'YES_I_REALLY_REALLY_WANT_TO_UPLOAD\' ]; then echo "REALLY_REALLY_UPLOAD environment variable should be overridden while triggering."; exit 1; fi'
+                }
                 fetchDirectory {
                   pipeline = 'installers/code-sign'
                   stage = 'dist'

@@ -1,7 +1,7 @@
 
 GoCD.script {
   pipelines {
-    pipeline('updated_upgrade_helm_chart_version') {
+    pipeline('upgrade-helm-chart-version') {
       group = 'internal'
       labelTemplate = '${COUNT}'
       lockBehavior = 'none'
@@ -13,7 +13,7 @@ GoCD.script {
           url = 'https://github.com/gocd/codesigning'
         }
         dependency('PromoteToStable') {
-          pipeline = 'promote-stable-release'
+          pipeline = 'PublishStableRelease'
           stage = 'publish-latest-json'
         }
       }
@@ -38,7 +38,7 @@ GoCD.script {
                 fetchArtifact {
                   destination = 'codesigning'
                   job = 'dist'
-                  pipeline = 'installers/code-sign/promote-stable-release'
+                  pipeline = 'installers/code-sign/PublishStableRelease'
                   runIf = 'passed'
                   source = 'dist/meta/version.json'
                   stage = 'dist'
@@ -49,7 +49,7 @@ GoCD.script {
                   workingDir = 'codesigning'
                 }
                 exec {
-                  commandLine = ['node', 'bump_helm_chart_version.js']
+                  commandLine = ['node', 'lib/bump_helm_chart_version.js']
                   runIf = 'passed'
                   workingDir = 'codesigning'
                 }
